@@ -1,0 +1,203 @@
+====== Exercise 5 - SQL Basics 4 ======
+
+1 | Create a new table called offices with the following columns:
+    - OfficeID (primary key)
+    - OfficeName
+    - Address
+    - PostalCode
+    - City
+
+--------------------------------------------------
+CREATE TABLE offices (
+    OfficeID INT AUTO_INCREMENT PRIMARY KEY,
+    OfficeName VARCHAR(100) NOT NULL,
+    Address VARCHAR(255) NOT NULL,
+    PostalCode VARCHAR(20) NOT NULL,
+    City VARCHAR(100) NOT NULL
+);
+--------------------------------------------------
+
+##################################################
+2 | Create a connection between offices and employees tables. Each employee can have one office attached (this should be an optional field). Use the following foreign key options:
+    - UPDATE CASCADE
+    - DELETE NO ACTION
+Important: If you get an error (code 1452), run the following command for the current session before connection creation:
+    - SET FOREIGN_KEY_CHECKS=0;
+--------------------------------------------------
+ALTER TABLE employees 
+ADD OfficeID INT;
+
+ALTER TABLE employees 
+ADD CONSTRAINT fk_office
+FOREIGN KEY (OfficeID) REFERENCES offices(OfficeID) 
+ON UPDATE CASCADE
+ON DELETE NO ACTION;
+--------------------------------------------------
+
+##################################################
+3 | Now do the following modifications to offices table:
+	- Add automatic counter for the OfficeID column so that new value will be generated automatically each time new data is inserted.
+	- Add a new column: manager (use data type int)
+	- Create another connection between offices and employees tables so that each office will have one employee working as a manager.
+--------------------------------------------------
+--  Modify OfficeID to be auto-incrementing
+ALTER TABLE offices  
+MODIFY COLUMN OfficeID INT NOT NULL AUTO_INCREMENT;
+
+ -- Add a new column Manager
+ALTER TABLE offices 
+ADD COLUMN Manager INT DEFAULT NULL; 
+
+-- Create foreign key relationship for Manager
+ALTER TABLE offices  
+ADD CONSTRAINT fk_manager 
+FOREIGN KEY (Manager) REFERENCES employees(EmployeeID) 
+ON UPDATE CASCADE 
+ON DELETE NO ACTION;
+--------------------------------------------------
+
+##################################################
+4 | Create input validation check using TRIGGER to offices table. OfficeName field value should not begin with a word office (for example, officenorth should not be accepted while northoffice will be accepted).
+--------------------------------------------------
+-- Set the delimiter to handle the trigger definition properly
+DELIMITER //
+
+-- Create a trigger for validation before inserting a new office
+CREATE TRIGGER check_officename_before_insert
+BEFORE INSERT ON offices
+FOR EACH ROW
+BEGIN
+    -- Check if the new OfficeName starts with 'office'
+    IF NEW.OfficeName LIKE 'office%' THEN
+        -- Raise an error if the condition is met
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'OfficeName cannot begin with the word "office"';
+    END IF;
+END; //
+
+-- Create a trigger for validation before updating an existing office
+CREATE TRIGGER check_officename_before_update
+BEFORE UPDATE ON offices
+FOR EACH ROW
+BEGIN
+    -- Check if the new OfficeName starts with 'office'
+    IF NEW.OfficeName LIKE 'office%' THEN
+        -- Raise an error if the condition is met
+        SIGNAL SQLSTATE '45000' 
+            SET MESSAGE_TEXT = 'OfficeName cannot begin with the word "office"';
+    END IF;
+END; //
+
+-- Reset the delimiter back to the default
+DELIMITER ;
+--------------------------------------------------
+
+##################################################
+5 | Create a new table called warehouses with the following columns:
+	- WarehouseID (primary key, numerical value with auto increment feature)
+	- Address
+	- PostalCode
+	- City
+	- SurfaceArea (number with one decimal in square meters)
+--------------------------------------------------
+CREATE TABLE warehouses(
+WarehouseID INT AUTO_INCREMENT PRIMARY KEY,
+Address VARCHAR(255) NOT NULL,
+PostalCode VARCHAR(20) NOT NULL,
+City VARCHAR(100) NOT NULL,
+SurfaceArea DECIMAL(10, 1) NOT NULL);
+--------------------------------------------------
+
+##################################################
+6 | Connect warehouses table to suppliers table. Each supplier can have many warehouses for supplies, but each warehouse can only be used by one supplier. Use the same foreign key options as previously:
+    - UPDATE CASCADE
+    - DELETE NO ACTION
+--------------------------------------------------
+-- Step 1: Add the SupplierID column to the warehouses table
+ALTER TABLE warehouses
+ADD SupplierID INT;
+
+-- Step 2: Add the foreign key constraint
+ALTER TABLE warehouses
+ADD CONSTRAINT fk_supplier
+FOREIGN KEY (SupplierID) REFERENCES suppliers(SupplierID)
+ON UPDATE CASCADE
+ON DELETE NO ACTION;
+--------------------------------------------------
+
+##################################################
+7 | Add the following columns to warehouses table:
+	- LastUpdated (automatic datetime value when new data is inserted or existing data is updated)
+	- AdditionalInfo (should store large amount of text data)
+--------------------------------------------------
+-- Step 1: Add the LastUpdated column
+ALTER TABLE warehouses
+ADD LastUpdated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- Step 2: Add the AdditionalInfo column
+ALTER TABLE warehouses
+ADD AdditionalInfo TEXT;
+--------------------------------------------------
+
+##################################################
+8 | Create a table called storages. Suppliers will store the following information about products into this table:
+	- StorageID (integer with auto increment feature)
+	- Shelf (shelf identifier, ie. A1, A2 etc.)
+	- Quantity (number of product units that have been stored)
+--------------------------------------------------
+CREATE TABLE storages(
+StorageID INT AUTO_INCREMENT PRIMARY KEY,
+Shelf VARCHAR(10) NOT NULL,
+Quantity INT NOT NULL);
+--------------------------------------------------
+
+##################################################
+9 | Connect the storages table with products and warehouses tables. One row in storages table will tell how many units of what product is stored in which warehouse (and of course the specific location in that warehouse created earlier with shelf identifier). Use a primary key column StorageID for this table with integer data type and auto increment feature.
+--------------------------------------------------
+-- Step 1: Add the necessary columns to the storages table
+ALTER TABLE storages
+ADD ProuctID INT NOT NULL,
+ADD WarehouseID INT NOT NULL;
+
+-- Step 2: Add foreign key constraint for ProductID
+ALTER TABLE storages
+ADD CONSTRAINT fk_product
+FOREIGN KEY (ProductID) REFERENCES products(ProductID)
+ON UPDATE CASCADE
+ON DELETE NO ACTION;
+
+-- Step 3: Add foreign key constraint for WarehouseID
+ALTER TABLE storages
+ADD CONSTRAINT fk_warehouse
+FOREIGN KEY (WarehouseID) REFERENCES warehouses(WarehouseID)
+ON UPDATE CASCADE
+ON DELETE NO ACTION;
+--------------------------------------------------
+
+##################################################
+10 | Create input validation check using TRIGGER to storages table. The following two conditions should be check before data is inserted:
+	- Quantity cannot be negative and cannot exceed the value of 5000000.
+	- Shelf identifiers must be in format XY where X can only be a letter in range A-Z inclusive and Y a number in range 0-9 inclusive (for example, AX1 should not be accepted).
+--------------------------------------------------
+DELIMITER //
+
+CREATE TRIGGER storages_before_insert
+BEFORE INSERT ON storages
+FOR EACH ROW
+BEGIN
+    -- Check if Quantity is between 0 and 5,000,000
+    IF NEW.Quantity < 0 OR NEW.Quantity > 5000000 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Quantity must be between 0 and 5,000,000.';
+    END IF;
+
+    -- Check if Shelf follows the pattern XY (X: A-Z, Y: 0-9)
+    IF NEW.Shelf NOT REGEXP '^[A-Z][0-9]+$' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Shelf identifier must be in format XY, where X is A-Z and Y is 0-9.';
+    END IF;
+END;
+//
+
+DELIMITER ;
+--------------------------------------------------

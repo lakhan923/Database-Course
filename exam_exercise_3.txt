@@ -1,0 +1,98 @@
+a) Select groceries that are missing the price information.
+
+ SELECT * FROM Products WHERE price IS NULL;
++------------+--------------+-------------+-------+
+| product_id | name         | category    | price |
++------------+--------------+-------------+-------+
+|          3 | Canned Beans | canned food |  NULL |
++------------+--------------+-------------+-------+
+
+-----------------------------------------------------------------------------------------------
+
+b) Select customers who have made more than one online order.
+
+SELECT customer_id, COUNT(order_id) AS order_count 
+FROM Orders 
+GROUP BY customer_id 
+HAVING COUNT(order_id) > 1;
+Empty set (0,001 sec)
+-----------------------------------------------------------------------------------------------
+
+c) Create a receipt of one online order of your choice. Receipt should include customer name, order
+number, the order creation date and the pickup date for the order.
+
+SELECT Customers.name AS customer_name, 
+Orders.order_id, 
+Orders.order_date, 
+Orders.pickup_date 
+FROM Orders 
+JOIN 
+Customers ON Orders.customer_id = Customers.customer_id 
+WHERE Orders.order_id = 1;
++---------------+----------+------------+-------------+
+| customer_name | order_id | order_date | pickup_date |
++---------------+----------+------------+-------------+
+| John Smith    |        1 | 2024-04-10 | 2024-04-15  |
++---------------+----------+------------+-------------+
+
+-----------------------------------------------------------------------------------------------
+
+d) Select all orders that have been made more than a week ago.
+
+SELECT * FROM Orders WHERE order_date < DATE_SUB(CURDATE(), INTERVAL 7 DAY);
++----------+-------------+------------+-------------+
+| order_id | customer_id | order_date | pickup_date |
++----------+-------------+------------+-------------+
+|        1 |           1 | 2024-04-10 | 2024-04-15  |
+|        2 |           2 | 2024-04-12 | 2024-04-18  |
+|        3 |           3 | 2024-04-13 | 2024-04-19  |
++----------+-------------+------------+-------------+
+
+-----------------------------------------------------------------------------------------------
+
+e) Show the storage count for all groceries in total for each grocery store (how many groceries are
+stored in each grocery stores storage).
+
+ SELECT Stores.name AS store_name,
+SUM(Storage.quantity) AS total_quantity
+FROM Storage
+JOIN 
+Stores ON Storage.store_id = Stores.store_id
+GROUP BY Stores.store_id;
++----------------+----------------+
+| store_name     | total_quantity |
++----------------+----------------+
+| Downtown Store |             80 |
+| Prisma Store   |             20 |
++----------------+----------------+
+
+-----------------------------------------------------------------------------------------------
+
+f) Count the total price of all groceries within one customer order of your choice.
+
+SELECT Orders.order_id,
+SUM(Products.price * Order_Details.quantity) AS total_order_price
+FROM Orders
+JOIN 
+Order_Details ON Orders.order_id = Order_Details.order_id
+JOIN 
+Products ON Order_Details.product_id = Products.product_id
+WHERE Orders.order_id = 1;  -- Replace with the order_id as needed
++----------+-------------------+
+| order_id | total_order_price |
++----------+-------------------+
+|        1 |              5.00 |
++----------+-------------------+
+
+-----------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,139 @@
+====== Exercise 6 - SQL Basics 5 ======
+
+1 | Create the following offices:
+	- Saint Louis office (address: Palm st 16, postalcode: 63107, city: Saint Louis, manager: Robert King)
+	- Springfield office (address: Ohio Ave 3, postalcode: 62702, city: Springfield, manager: Nancy Davolio)
+	- Kansas City office (address: Beverly st 80, postalcode: 66204, city: Kansas City, manager: Adam West)
+--------------------------------------------------
+INSERT INTO offices (OfficeName, Address, PostalCode, City, Manager) VALUES
+('Saint Louis office', 'Palm st 16', '63107', 'Saint Louis', 
+(SELECT EmployeeID FROM employees WHERE FirstName = 'Robert' AND LastName = 'King')),
+
+('Springfield office', 'Ohio Ave 3', '62702', 'Springfield', 
+(SELECT EmployeeID FROM employees WHERE FirstName = 'Nancy' AND LastName = 'Davolio')),
+
+('Kansas City office', 'Beverly st 80', '66204', 'Kansas City', 
+(SELECT EmployeeID FROM employees WHERE FirstName = 'Adam' AND LastName = 'West'));
+--------------------------------------------------
+
+##################################################
+2 | Create the following warehouses:
+	- Liberty warehouse (address: Grant Ave 400, postalcode: 64068, city: Liberty, surfacearea: 200m2, supplier: New Orleans Cajun Delights)
+	- Blue Springs warehouse (address: 1030 SE Forest Ridge Ct, postalcode: 64014, city: Blue Springs, surfacearea: 350m2, supplier: Tasty Roots)
+	- Eldon warehouse (address: 800 W Champain St, postalcode: 65026, city: Eldon, surfacearea: 400m2, supplier: New Orleans Cajun Delights)
+	- Quincy warehouse (address: 3100 Payson Rd, postalcode: 62305, city: Quincy, surfacearea: 280m2, supplier: Tropical Fruits)
+	- Cameron warehouse (address: 650 E Grand Ave, postalcode: 64429, city: Cameron, surfacearea: 310m2, supplier: Bigfoot Breweries)
+--------------------------------------------------
+INSERT INTO warehouses (Address, PostalCode, City, SurfaceArea, SupplierID)
+VALUES('Grant Ave 400', '64068', 'Liberty', 200.0, 
+(SELECT SupplierID FROM suppliers WHERE SupplierName = 'New Orleans Cajun Delights')),
+
+('1030 SE Forest Ridge Ct', '64014', 'Blue Springs', 350.0, 
+(SELECT SupplierID FROM suppliers WHERE SupplierName = 'Tasty Roots')),
+
+('800 W Champain St', '65026', 'Eldon', 400.0, 
+(SELECT SupplierID FROM suppliers WHERE SupplierName = 'New Orleans Cajun Delights')),
+
+('3100 Payson Rd', '62305', 'Quincy', 280.0, 
+(SELECT SupplierID FROM suppliers WHERE SupplierName = 'Tropical Fruits')),
+
+('650 E Grand Ave', '64429', 'Cameron', 310.0, 
+(SELECT SupplierID FROM suppliers WHERE SupplierName = 'Bigfoot Breweries'));
+--------------------------------------------------
+
+##################################################
+3 | Let's add couple of products into some of previously created warehouses (more specifically into storage shelves inside warehouses). Add the following products:
+	- Products in Liberty Warehouse (Grant Ave 400):
+		* product: Chang, quantity: 16000, shelf: A7
+		* product: Tofu, quantity: 12000, shelf: T8
+	- Products in Blue Springs Warehouse (1030 SE Forest Ridge Ct):
+		* product: Maxilaku, quantity: 50000, shelf: B5
+		* product: Ipoh Coffee, quantity: 35000, shelf: C9
+	- Products in Eldon Warehouse (800 W Champain St):
+		* product: Sun-Dried Tomatoes, quantity: 95000, shelf: A1
+		* product: Almond Milk, quantity: 15000, shelf: Q7
+--------------------------------------------------
+-- Inserting products into Liberty Warehouse (WarehouseID 1)
+INSERT INTO storages (Shelf, Quantity, ProductID, WarehouseID) VALUES
+('A7', 16000, (SELECT ProductID FROM products WHERE ProductName = 'Chang'), 1),
+('T8', 12000, (SELECT ProductID FROM products WHERE ProductName = 'Tofu'), 1);
+
+-- Inserting products into Blue Springs Warehouse (WarehouseID 2)
+INSERT INTO storages (Shelf, Quantity, ProductID, WarehouseID) VALUES
+('B5', 50000, (SELECT ProductID FROM products WHERE ProductName = 'Maxilaku'), 2),
+('C9', 35000, (SELECT ProductID FROM products WHERE ProductName = 'Ipoh Coffee'), 2);
+
+-- Inserting products into Eldon Warehouse (WarehouseID 3)
+INSERT INTO storages (Shelf, Quantity, ProductID, WarehouseID) VALUES
+('A1', 95000, (SELECT ProductID FROM products WHERE ProductName = 'Sun-Dried Tomatoes'), 3),
+('Q7', 15000, (SELECT ProductID FROM products WHERE ProductName = 'Almond Milk'), 3);
+--------------------------------------------------
+
+##################################################
+4 | Springfield office moves to a new address in Springfield. Do the following changes:
+	- address: 1500 Knotts St
+	- postalcode: 62703
+--------------------------------------------------
+UPDATE offices 
+SET Address = '1500 Knotts St', 
+PostalCode = '62703' 
+WHERE OfficeName = 'Springfield office';
+--------------------------------------------------
+
+##################################################
+5 | Manager of Kansas City office has left the company and Laura Callahan will be the new manager. Do the update using subquery (tip: get the employeeid for manager column using subquery)!
+--------------------------------------------------
+UPDATE offices 
+SET Manager = (SELECT EmployeeID FROM employees WHERE FirstName = 'Laura' AND LastName = 'Callahan')
+WHERE OfficeName = 'Kansas City office';
+--------------------------------------------------
+
+##################################################
+6 | Double the quantity of Tofu and move the product to W8 shelf which has more space for the greater quantity in Liberty Warehouse.
+--------------------------------------------------
+UPDATE storages 
+SET Quantity = Quantity * 2, 
+Shelf = 'W8' 
+WHERE ProductID = 14 
+AND WarehouseID = 1;
+--------------------------------------------------
+
+##################################################
+7 | Create a copy of the storages table. New table should be called storages_backup.
+--------------------------------------------------
+CREATE TABLE storages_backup AS 
+SELECT * FROM storages WHERE 1=0;
+--------------------------------------------------
+
+##################################################
+8 | Copy the data from storages table into storages_backup table.
+--------------------------------------------------
+INSERT INTO storages_backup 
+SELECT * FROM storages;
+--------------------------------------------------
+
+##################################################
+9 | The lease for the warehouse in Liberty is coming to an end and the supplier plans to move the products to a larger warehouse in Eldon (Do this same update into the storages_backup table too!). Transfer the Liberty warehouse products to Eldon and remove the Liberty warehouse from the warehouses table.
+--------------------------------------------------
+-- Step 1: Update storages table to move products from Liberty to Eldon
+
+UPDATE storages 
+SET WarehouseID = 3  -- Change to Eldon (WarehouseID 3)
+WHERE WarehouseID = 1;  -- From Liberty (WarehouseID 1)
+
+-- Step 2: Update storages_backup table to move products from Liberty to Eldon
+UPDATE storages_backup 
+SET WarehouseID = 3  -- Change to Eldon (WarehouseID 3)
+WHERE WarehouseID = 1;  -- From Liberty (WarehouseID 1)
+
+-- Step 3: Remove Liberty warehouse from the warehouses table
+DELETE FROM warehouses 
+WHERE WarehouseID = 1;  -- Remove Liberty warehouse
+--------------------------------------------------
+
+##################################################
+10 | Remove all products from storages table with 0 as a quantity value.
+--------------------------------------------------
+DELETE FROM storages 
+WHERE Quantity = 0;
+--------------------------------------------------

@@ -1,0 +1,55 @@
+CREATE DATABASE MusicEventsFinland;
+USE MusicEventsFinland;
+
+CREATE TABLE Organizer (
+    organizer_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    contact_info VARCHAR(255)
+);
+
+CREATE TABLE Artist (
+    artist_id INT PRIMARY KEY AUTO_INCREMENT,  
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2)
+);
+
+CREATE TABLE Location (
+    location_id INT PRIMARY KEY AUTO_INCREMENT,
+    city VARCHAR(100) NOT NULL,
+    address VARCHAR(255),
+    description TEXT
+);
+
+CREATE TABLE Ticketing (
+    ticketing_id INT PRIMARY KEY AUTO_INCREMENT,
+    is_free_entry BOOLEAN NOT NULL,
+    ticket_price DECIMAL(10, 2)
+);
+
+CREATE TABLE Event (
+    event_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    date DATE NOT NULL,
+    schedule VARCHAR(100),
+    organizer_id INT,
+    location_id INT,
+    ticketing_id INT,
+    FOREIGN KEY (organizer_id) REFERENCES Organizer(organizer_id),
+    FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    FOREIGN KEY (ticketing_id) REFERENCES Ticketing(ticketing_id)
+);
+
+CREATE TABLE Event_Artist (
+    event_id INT,
+    artist_id INT,
+    PRIMARY KEY (event_id, artist_id),
+    FOREIGN KEY (event_id) REFERENCES Event(event_id),
+    FOREIGN KEY (artist_id) REFERENCES Artist(artist_id)
+);
+
+CREATE TABLE Playlist (
+    playlist_id INT PRIMARY KEY AUTO_INCREMENT,
+    artist_id INT,
+    song_name VARCHAR(100) NOT NULL,
+    FOREIGN KEY (artist_id) REFERENCES Artist(artist_id)
+);
